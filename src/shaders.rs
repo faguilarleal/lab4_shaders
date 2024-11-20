@@ -44,18 +44,23 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
   }
 }
 
-pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms, id:f32) -> Color {
 // planet1(fragment, uniforms)
 // sun_shader(fragment, uniforms)
 // earth_shader(fragment, uniforms)
 // vibrant_blue_planet_shader(fragment, uniforms)
-planet_exotic_shader(fragment, uniforms)
+if id == 2.0 {
+  ring_shader(fragment, uniforms)
+}
+else {
+    planet1(fragment, uniforms)
+}
   }
 
 // planeta 1, planeta gaseoso
 fn planet1(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-   let color1 = Color::new(134, 100, 35 );   
-   let color2 = Color::new(169, 141, 86);   
+   let color1 = Color::new( 163, 120, 39);   
+   let color2 = Color::new(163, 97, 39 );   
  
    let stripe_width = 0.2;  // Width of each stripe
    let speed = 0.001;        // Speed of stripe movement
@@ -187,43 +192,123 @@ pub fn vibrant_blue_planet_shader(fragment: &Fragment, uniforms: &Uniforms) -> C
   color_final * fragment.intensity + glow_color * glow_intensity
 }
 
-pub fn planet_exotic_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-  // Colores base
-  let color_amarillo = Color::new(255, 223, 75);    // Amarillo
-  let color_naranja = Color::new(255, 165, 0);      // Naranja
-  let color_lila = Color::new(238, 130, 238);       // Lila
-  let color_rosa = Color::new(255, 105, 180);       // Rosa
-  let color_purpura = Color::new(75, 0, 130);       // Púrpura
+fn rocky_planet_shader(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
+  let scale = 10.0; // Escala del patrón de ruido
+  let light_adjust = 0.6; // Ajuste de intensidad lumínica ambiental
 
-  // Posición del fragmento y tiempo
-  let position = fragment.vertex_position;
-  let t = uniforms.time as f32 * 0.6;
+  // Coordenadas esféricas del fragmento
+  let x = fragment.vertex_position.x;
+  let y = fragment.vertex_position.y;
+  let z = fragment.vertex_position.z;
 
-  // Escala para patrones detallados
-  let zoom = 150.0;
+  // Introducir pseudoaleatoriedad en la textura
+  let randomness = (x * 12.9898 + y * 78.233 + z * 37.719).sin() * 43758.5453;
+  let random_factor = randomness.fract(); // Tomamos solo la parte decimal
 
-  // Función de ruido aproximada con varias capas
-  let ruido_base = ((position.x * zoom + t).sin() * (position.y * zoom + t).cos()).abs();
-  let ruido_detalle = ((position.x * zoom * 0.5).sin() * (position.y * zoom * 0.5).cos() * 0.5).abs();
-  let ruido_fino = ((position.x * zoom * 2.0 + t * 0.5).sin() * (position.y * zoom * 2.0 + t * 0.5).cos()).abs();
+  // Coordenadas ajustadas con ruido aleatorio
+  let adjusted_x = x + random_factor * 0.1;
+  let adjusted_y = y + random_factor * 0.1;
 
-  // Combinar las capas de ruido
-  let ruido = (ruido_base + ruido_detalle * 0.5 + ruido_fino * 0.25).clamp(0.0, 1.0);
+  // Patrón de ruido basado en seno y coseno para variaciones rocosas
+  let noise_pattern = ((adjusted_x * scale).sin() * (adjusted_y * scale).cos()).abs();
 
-  // Generar patrones de color
-  let patron1 = (ruido * 1.5 + (position.x * 0.5).sin() * 0.5).clamp(0.0, 1.0);
-  let patron2 = ((position.y * 0.3 + ruido) * 2.0).sin().abs();
+  // Colores base para las regiones del terreno
+  let base_color = Color::new(120, 85, 60); // Color terroso
+  let highlight_color = Color::new(200, 170, 140); // Tonos más claros para áreas elevadas
 
-  // Luz ambiental
-  let ambient_intensity = 0.3;
-  let ambient_color = Color::new(30, 20, 60);
+  // Combina colores en función del patrón de ruido
+  let surface_color = base_color.lerp(&highlight_color, noise_pattern);
 
-  // Interpolación de colores entre las zonas del planeta
-  let mut color_final = color_amarillo.lerp(&color_naranja, patron1);
-  color_final = color_final.lerp(&color_lila, patron2);
-  color_final = color_final.lerp(&color_rosa, patron1 * patron2);
-  color_final = color_final.lerp(&color_purpura, (1.0 - patron1) * 0.5);
+  // Iluminación ambiental simple
+  let ambient_intensity = 0.8;
+  let ambient_color = Color::new(50, 30, 20); // Luz cálida difusa
 
-  // Combinar con luz ambiental
-  color_final * fragment.intensity + ambient_color * ambient_intensity
+  // Ajuste de la intensidad de luz
+  let final_color = surface_color * fragment.intensity * light_adjust
+      + ambient_color * ambient_intensity;
+
+  final_color
+}
+
+fn moon_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+  // Colores base para la superficie lunar
+  let base_color = Color::new(200, 200, 200); // Gris claro para la superficie
+  let crater_color = Color::new(120, 120, 120); // Gris oscuro para los cráteres
+
+  // Coordenadas del fragmento
+  let x = fragment.vertex_position.x;
+  let y = fragment.vertex_position.y;
+  let z = fragment.vertex_position.z;
+
+  // Coordenadas esféricas para la superficie
+  let longitude = z.atan2(x); // Longitud
+  let latitude = y.asin();    // Latitud
+
+  // Ruido para cráteres
+  let scale = 10.0; // Escala para los patrones de ruido
+  let noise_value = ((longitude * scale).sin() * (latitude * scale).cos()).abs();
+
+  // Generar cráteres (regiones más oscuras)
+  let crater_threshold = 0.4;
+  let is_crater = noise_value > crater_threshold;
+
+  // Interpolación de colores entre cráteres y la superficie base
+  let surface_color = if is_crater {
+      crater_color
+  } else {
+      base_color
+  };
+
+  // Iluminación básica para simular sombras
+  let light_direction = Vec3::new(1.0, 1.0, 1.0).normalize(); // Dirección de la luz
+  let normal = fragment.vertex_position.normalize(); // Normal de la esfera
+  let light_intensity = (normal.dot(&light_direction)).clamp(0.2, 1.0); // Intensidad de la luz
+  let shadow_color = Color::new(50, 50, 50); // Sombra suave
+
+  // Aplicar iluminación
+  let final_color = surface_color * light_intensity + shadow_color * (1.0 - light_intensity);
+
+  final_color
+}
+
+
+fn ring_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
+  // Colores base para la superficie lunar
+  let base_color = Color::new(184, 162, 42 ); // Gris claro para la superficie
+  let crater_color = Color::new(184, 177, 42 ); // Gris oscuro para los cráteres
+
+  // Coordenadas del fragmento
+  let x = fragment.vertex_position.x;
+  let y = fragment.vertex_position.y;
+  let z = fragment.vertex_position.z;
+
+  // Coordenadas esféricas para la superficie
+  let longitude = z.atan2(x); // Longitud
+  let latitude = y.asin();    // Latitud
+
+  // Ruido para cráteres
+  let scale = 10.0; // Escala para los patrones de ruido
+  let noise_value = ((longitude * scale).cos() * (latitude * scale).sin()).abs();
+
+  // Generar cráteres (regiones más oscuras)
+  let crater_threshold = 0.4;
+  let is_crater = noise_value > crater_threshold;
+
+  // Interpolación de colores entre cráteres y la superficie base
+  let surface_color = if is_crater {
+      crater_color
+  } else {
+      base_color
+  };
+
+  // Iluminación básica para simular sombras
+  let light_direction = Vec3::new(1.0, 1.0, 1.0).normalize(); // Dirección de la luz
+  let normal = fragment.vertex_position.normalize(); // Normal de la esfera
+  let light_intensity = (normal.dot(&light_direction)).clamp(0.2, 1.0); // Intensidad de la luz
+  let shadow_color = Color::new(50, 50, 50); // Sombra suave
+
+  // Aplicar iluminación
+  let final_color = surface_color * light_intensity + shadow_color * (1.0 - light_intensity);
+
+  final_color
 }

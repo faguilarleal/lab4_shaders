@@ -87,7 +87,8 @@ fn create_viewport_matrix(width: f32, height: f32) -> Mat4 {
     )
 }
 
-fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex]) {
+fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Vertex], id: f32) {
+    
     // Vertex Shader Stage
     let mut transformed_vertices = Vec::with_capacity(vertex_array.len());
     for vertex in vertex_array {
@@ -119,7 +120,7 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
         let y = fragment.position.y as usize;
         if x < framebuffer.width && y < framebuffer.height {
             // Apply fragment shader
-            let shaded_color = fragment_shader(&fragment, &uniforms);
+            let shaded_color = fragment_shader(&fragment, &uniforms, id);
             let color = shaded_color.to_hex();
             framebuffer.set_current_color(color);
             framebuffer.point(x, y, fragment.depth);
@@ -127,7 +128,47 @@ fn render(framebuffer: &mut Framebuffer, uniforms: &Uniforms, vertex_array: &[Ve
     }
 }
 
+pub struct SceneObject {
+    pub translation: Vec3,
+    pub rotation: Vec3,
+    pub scale: f32,
+    pub vertex_array: Vec<Vertex>,
+    pub id: f32, 
+}
+
+
+
 fn main() {
+
+    let obj = Obj::load("assets/sphere.obj").expect("Failed to load obj");
+    let obj2 = Obj::load("assets/rings.obj").expect("Failed to load obj");
+
+    let objects = vec![
+        SceneObject {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Vec3::new(0.0, 0.0, 0.0),
+            scale: 1.0,
+            vertex_array: obj.get_vertex_array(),
+            id: 1.0,
+        },
+        // SceneObject {
+        //     translation: Vec3::new(0.5, 1.0, 0.0),
+        //     rotation: Vec3::new(0.0, PI / 4.0, 0.0),
+        //     scale: 0.3,
+        //     vertex_array: obj.get_vertex_array(), // Reutilizando el mismo modelo
+        //     id: 2.0,
+        // },
+        SceneObject {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Vec3::new(0.0, PI / 4.0, 0.0),
+            scale: 0.6,
+            vertex_array: obj2.get_vertex_array(), // Reutilizando el mismo modelo
+            id: 2.0, 
+        },
+    ];
+
+
+
     let window_width = 800;
     let window_height = 600;
     let framebuffer_width = 800;
@@ -135,7 +176,7 @@ fn main() {
 
     let mut framebuffer = Framebuffer::new(framebuffer_width, framebuffer_height);
     let mut window = Window::new(
-        "Rust Graphics - Renderer Example",
+        "Shaders",
         window_width,
         window_height,
         WindowOptions::default(),
@@ -159,40 +200,42 @@ fn main() {
         Vec3::new(0.0, 1.0, 0.0)
     );
 
-    let obj = Obj::load("assets/sphere.obj").expect("Failed to load obj");
-    let vertex_arrays = obj.get_vertex_array(); 
     let mut time = 0;
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
             break;
         }
-
+    
         time += 1;
-
+    
         handle_input(&window, &mut camera);
-
+    
         framebuffer.clear();
-
-        let model_matrix = create_model_matrix(translation, scale, rotation);
+    
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(window_width as f32, window_height as f32);
         let viewport_matrix = create_viewport_matrix(framebuffer_width as f32, framebuffer_height as f32);
-        let uniforms = Uniforms { 
-            model_matrix, 
-            view_matrix, 
-            projection_matrix, 
-            viewport_matrix, 
-            time, 
-        };
-
-        framebuffer.set_current_color(0xFFDDDD);
-        render(&mut framebuffer, &uniforms, &vertex_arrays);
-
+    
+        for object in &objects {
+            let model_matrix = create_model_matrix(object.translation, object.scale, object.rotation);
+            let uniforms = Uniforms {
+                model_matrix,
+                view_matrix,
+                projection_matrix,
+                viewport_matrix,
+                time,
+            };
+    
+            framebuffer.set_current_color(0xFFDDDD);
+            render(&mut framebuffer, &uniforms, &object.vertex_array, object.id);
+        }
+    
         window
             .update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height)
             .unwrap();
     }
+    
 }
 
 fn handle_input(window: &Window, camera: &mut Camera) {
