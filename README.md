@@ -13,4 +13,8 @@ Planeta 4 | Planeta gaseoso con movimiento
 Plnaeta 5 | Planeta rocoso  
 ![image](https://github.com/user-attachments/assets/151d324f-37aa-41dd-b566-8d185fec0583)
 
+Planeta 6 | Planeta gaseoso con luna
+![image](https://github.com/user-attachments/assets/89b0205f-8a95-4ad7-a648-4dcbb76edbbe)
 
+Planeta 7 | Planeta con anillo 
+![image](https://github.com/user-attachments/assets/c7684ca1-4fdd-41c4-89ec-c9ed5db7208c)
