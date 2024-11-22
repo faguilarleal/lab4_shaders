@@ -1,6 +1,6 @@
 use nalgebra_glm::{atan2, dot, mat4_to_mat3, Mat3, Vec2, Vec3, Vec4};
 use crate::vertex::Vertex;
-use crate::Uniforms;
+use crate::{framebuffer, Uniforms};
 use crate::fragment::Fragment;
 use crate::color::Color;
 use std::f32::consts::PI;
@@ -45,22 +45,20 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
 }
 
 pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms, id:f32) -> Color {
-// planet1(fragment, uniforms)
-// sun_shader(fragment, uniforms)
-// earth_shader(fragment, uniforms)
-// vibrant_blue_planet_shader(fragment, uniforms)
-if id == 2.0 {
-  ring_shader(fragment, uniforms)
-}
-else {
-    planet1(fragment, uniforms)
-}
+    // planet1(fragment, uniforms)
+    // sun_shader(fragment, uniforms)
+    // earth_shader(fragment, uniforms)
+    // vibrant_blue_planet_shader(fragment, uniforms)
+    // if id == 1.0 {
+      vibrant_blue_planet_shader(fragment, uniforms)
+    // }
+    
   }
 
 // planeta 1, planeta gaseoso
 fn planet1(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-   let color1 = Color::new( 163, 120, 39);   
-   let color2 = Color::new(163, 97, 39 );   
+   let color1 = Color::new( 85, 117, 114 );   
+   let color2 = Color::new(112, 147, 144  );   
  
    let stripe_width = 0.2;  // Width of each stripe
    let speed = 0.001;        // Speed of stripe movement
@@ -163,33 +161,29 @@ fn earth_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
 }
 
 pub fn vibrant_blue_planet_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
-  // Colores base del planeta
-  let color_azul_oscuro = Color::new(10, 20, 50);        // Azul oscuro
-  let color_azul_medio = Color::new(30, 60, 120);        // Azul medio
-  let color_turquesa_brillante = Color::new(50, 200, 255); // Turquesa brillante
+  let zoom = 3.0;
+    let x = fragment.vertex_position.x;
+    let y = fragment.vertex_position.y;
+    let time = uniforms.time as f32 * 0.05;
 
-  // Posición normalizada del fragmento
-  let x = fragment.vertex_position.x;
-  let y = fragment.vertex_position.y;
-  let distancia_centro = (x * x + y * y).sqrt(); // Distancia al centro (para mantener forma esférica)
+    // Crear un patrón basado en ondas para un efecto gaseoso dinámico
+    let pattern1 = ((x * zoom + time).sin() * (y * zoom + time).cos()).abs();
+    let pattern2 = ((x * zoom * 0.5 - time).cos() * (y * zoom * 0.7 + time).sin()).abs();
+    let combined_pattern = (pattern1 + pattern2 * 0.5).min(1.0);
 
-  // Patrón 1: Líneas curvas basadas en coordenadas
-  let scale = 5.0;
-  let patron1 = ((x * scale).sin() * (y * scale).cos()).abs();
+    // Colores de base con tonos más azulados y menos fucsia
+    let r = (combined_pattern * 100.0) as u8;
+    let g = ((1.0 - combined_pattern) * 170.0) as u8;
+    let b = 240;
 
-  // Patrón 2: Variaciones más sutiles hacia el centro
-  let patron2 = (1.0 - distancia_centro).clamp(0.0, 1.0);
+    let base_color = Color::new(r, g, b);
 
-  // Interpolación de colores para el cuerpo del planeta
-  let mut color_final = color_azul_oscuro.lerp(&color_azul_medio, patron1);
-  color_final = color_final.lerp(&color_turquesa_brillante, patron2);
+    // Ajuste de iluminación ambiental para un aspecto de gas disperso
+    let ambient_intensity = 0.5;
+    let ambient_color = Color::new(200, 80, 198);
 
-  // Agregar brillo ambiental para simular atmósfera
-  let glow_intensity = (1.0 - distancia_centro).clamp(0.0, 1.0) * 0.3;
-  let glow_color = Color::new(100, 200, 255); // Azul brillante para el resplandor
-
-  // Combinar los patrones con la atmósfera
-  color_final * fragment.intensity + glow_color * glow_intensity
+    // Mezcla del color base y el color ambiental para dar una apariencia gaseosa en toda la superficie
+    base_color * fragment.intensity + ambient_color * ambient_intensity
 }
 
 fn rocky_planet_shader(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
@@ -232,43 +226,23 @@ fn rocky_planet_shader(fragment: &Fragment, _uniforms: &Uniforms) -> Color {
 
 fn moon_shader(fragment: &Fragment, uniforms: &Uniforms) -> Color {
   // Colores base para la superficie lunar
-  let base_color = Color::new(200, 200, 200); // Gris claro para la superficie
-  let crater_color = Color::new(120, 120, 120); // Gris oscuro para los cráteres
+  let color1 = Color::new( 197, 199, 200);
+  let color2 = Color::new( 220, 221, 222);
+  let color3 = Color::new(137, 149, 154);
 
-  // Coordenadas del fragmento
   let x = fragment.vertex_position.x;
   let y = fragment.vertex_position.y;
-  let z = fragment.vertex_position.z;
+  let frequency = 10.0;
 
-  // Coordenadas esféricas para la superficie
-  let longitude = z.atan2(x); // Longitud
-  let latitude = y.asin();    // Latitud
+  let wave1= (x*7.0*frequency + y * 5.0 * frequency).sin() * 0.5 + 0.5;
+  let wave2= (x*5.0*frequency - y * 8.0 * frequency + PI / 3.0).sin() * 0.5 + 0.5;
+  let wave3= (x*6.0*frequency + x * 4.0 * frequency + 2.0 * PI/3.0).sin() * 0.5 + 0.5;
 
-  // Ruido para cráteres
-  let scale = 10.0; // Escala para los patrones de ruido
-  let noise_value = ((longitude * scale).sin() * (latitude * scale).cos()).abs();
+  let mut final_color = color1.lerp(&color2, wave1);
+  final_color = final_color.lerp(&color3, wave2);
+  final_color = final_color.lerp(&color1, wave3);
 
-  // Generar cráteres (regiones más oscuras)
-  let crater_threshold = 0.4;
-  let is_crater = noise_value > crater_threshold;
-
-  // Interpolación de colores entre cráteres y la superficie base
-  let surface_color = if is_crater {
-      crater_color
-  } else {
-      base_color
-  };
-
-  // Iluminación básica para simular sombras
-  let light_direction = Vec3::new(1.0, 1.0, 1.0).normalize(); // Dirección de la luz
-  let normal = fragment.vertex_position.normalize(); // Normal de la esfera
-  let light_intensity = (normal.dot(&light_direction)).clamp(0.2, 1.0); // Intensidad de la luz
-  let shadow_color = Color::new(50, 50, 50); // Sombra suave
-
-  // Aplicar iluminación
-  let final_color = surface_color * light_intensity + shadow_color * (1.0 - light_intensity);
-
-  final_color
+  final_color * fragment.intensity
 }
 
 

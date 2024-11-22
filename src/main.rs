@@ -144,6 +144,8 @@ fn main() {
     let obj2 = Obj::load("assets/rings.obj").expect("Failed to load obj");
 
     let objects = vec![
+        
+        // planeta con luna
         SceneObject {
             translation: Vec3::new(0.0, 0.0, 0.0),
             rotation: Vec3::new(0.0, 0.0, 0.0),
@@ -151,6 +153,7 @@ fn main() {
             vertex_array: obj.get_vertex_array(),
             id: 1.0,
         },
+        // luna
         // SceneObject {
         //     translation: Vec3::new(0.5, 1.0, 0.0),
         //     rotation: Vec3::new(0.0, PI / 4.0, 0.0),
@@ -158,13 +161,7 @@ fn main() {
         //     vertex_array: obj.get_vertex_array(), // Reutilizando el mismo modelo
         //     id: 2.0,
         // },
-        SceneObject {
-            translation: Vec3::new(0.0, 0.0, 0.0),
-            rotation: Vec3::new(0.0, PI / 4.0, 0.0),
-            scale: 0.6,
-            vertex_array: obj2.get_vertex_array(), // Reutilizando el mismo modelo
-            id: 2.0, 
-        },
+       
     ];
 
 
@@ -212,6 +209,8 @@ fn main() {
         handle_input(&window, &mut camera);
     
         framebuffer.clear();
+
+
     
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(window_width as f32, window_height as f32);
@@ -243,6 +242,8 @@ fn handle_input(window: &Window, camera: &mut Camera) {
     let rotation_speed = PI/50.0;
     let zoom_speed = 0.1;
    
+   
+
     //  camera orbit controls
     if window.is_key_down(Key::Left) {
       camera.orbit(rotation_speed, 0.0);
