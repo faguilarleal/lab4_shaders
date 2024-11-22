@@ -45,13 +45,23 @@ pub fn vertex_shader(vertex: &Vertex, uniforms: &Uniforms) -> Vertex {
 }
 
 pub fn fragment_shader(fragment: &Fragment, uniforms: &Uniforms, id:f32) -> Color {
-    // planet1(fragment, uniforms)
-    // sun_shader(fragment, uniforms)
-    // earth_shader(fragment, uniforms)
-    // vibrant_blue_planet_shader(fragment, uniforms)
-    // if id == 1.0 {
-      vibrant_blue_planet_shader(fragment, uniforms)
-    // }
+  match id {
+    1.0 => planet1(fragment, uniforms),
+    2.0 => moon_shader(fragment, uniforms),
+
+    3.0 => sun_shader(fragment, uniforms),
+
+    4.0 => earth_shader(fragment, uniforms),
+    5.0 => vibrant_blue_planet_shader(fragment, uniforms),
+    
+    6.0 => rocky_planet_shader(fragment, uniforms),
+    7.0 => ring_shader(fragment, uniforms),
+    // Agregar más shaders aquí según sea necesario
+    _ => {
+        // Por defecto, renderiza un shader genérico
+        Color::new(0, 0, 0) // Negro como fallback
+    }
+}
     
   }
 

@@ -153,14 +153,48 @@ fn main() {
             vertex_array: obj.get_vertex_array(),
             id: 1.0,
         },
-        // luna
-        // SceneObject {
-        //     translation: Vec3::new(0.5, 1.0, 0.0),
-        //     rotation: Vec3::new(0.0, PI / 4.0, 0.0),
-        //     scale: 0.3,
-        //     vertex_array: obj.get_vertex_array(), // Reutilizando el mismo modelo
-        //     id: 2.0,
-        // },
+                // luna
+        SceneObject {
+            translation: Vec3::new(0.5, 1.0, 0.0),
+            rotation: Vec3::new(0.0, PI / 4.0, 0.0),
+            scale: 0.3,
+            vertex_array: obj.get_vertex_array(), // Reutilizando el mismo modelo
+            id: 2.0,
+        },
+
+        SceneObject {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Vec3::new(0.0, 0.0, 0.0),
+            scale: 1.0,
+            vertex_array: obj.get_vertex_array(),
+            id: 3.0,
+        },SceneObject {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Vec3::new(0.0, 0.0, 0.0),
+            scale: 1.0,
+            vertex_array: obj.get_vertex_array(),
+            id: 4.0,
+        },SceneObject {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Vec3::new(0.0, 0.0, 0.0),
+            scale: 1.0,
+            vertex_array: obj.get_vertex_array(),
+            id: 5.0,
+        },SceneObject {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Vec3::new(0.0, 0.0, 0.0),
+            scale: 1.0,
+            vertex_array: obj.get_vertex_array(),
+            id: 6.0,
+        },SceneObject {
+            translation: Vec3::new(0.0, 0.0, 0.0),
+            rotation: Vec3::new(0.0, 0.0, 0.0),
+            scale: 1.0,
+            vertex_array: obj.get_vertex_array(),
+            id: 7.0,
+        },
+        
+        
        
     ];
 
@@ -198,6 +232,7 @@ fn main() {
     );
 
     let mut time = 0;
+    let mut selected_object = 0; // Índice inicial del objeto seleccionado
 
     while window.is_open() {
         if window.is_key_down(Key::Escape) {
@@ -208,15 +243,31 @@ fn main() {
     
         handle_input(&window, &mut camera);
     
+        // Detectar teclas del 1 al 7 para cambiar el objeto seleccionado
+        if window.is_key_down(Key::Key1) {
+            selected_object = 0; // Objeto 1
+        } else if window.is_key_down(Key::Key2) {
+            selected_object = 1; // Objeto 2
+        } else if window.is_key_down(Key::Key3) {
+            selected_object = 2; // Objeto 3
+        } else if window.is_key_down(Key::Key4) {
+            selected_object = 3; // Objeto 4
+        } else if window.is_key_down(Key::Key5) {
+            selected_object = 4; // Objeto 5
+        } else if window.is_key_down(Key::Key6) {
+            selected_object = 5; // Objeto 6
+        } else if window.is_key_down(Key::Key7) {
+            selected_object = 6; // Objeto 7
+        }
+    
         framebuffer.clear();
-
-
     
         let view_matrix = create_view_matrix(camera.eye, camera.center, camera.up);
         let projection_matrix = create_perspective_matrix(window_width as f32, window_height as f32);
         let viewport_matrix = create_viewport_matrix(framebuffer_width as f32, framebuffer_height as f32);
     
-        for object in &objects {
+        // Renderizar solo el objeto seleccionado
+        if let Some(object) = objects.get(selected_object) {
             let model_matrix = create_model_matrix(object.translation, object.scale, object.rotation);
             let uniforms = Uniforms {
                 model_matrix,
@@ -226,13 +277,15 @@ fn main() {
                 time,
             };
     
-            framebuffer.set_current_color(0xFFDDDD);
+            framebuffer.set_current_color(0xFFDDDD); // Color del objeto
             render(&mut framebuffer, &uniforms, &object.vertex_array, object.id);
         }
     
         window
             .update_with_buffer(&framebuffer.buffer, framebuffer_width, framebuffer_height)
             .unwrap();
+    
+        std::thread::sleep(std::time::Duration::from_millis(16));
     }
     
 }
